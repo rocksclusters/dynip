@@ -63,19 +63,15 @@ include Rules.mk
 
 
 build:
-	gunzip -c $(NAME)-$(VERSION).$(TARBALL_POSTFIX) | $(TAR) -xf -
-	( 							\
-		cd $(NAME)-$(VERSION);				\
-		./configure --prefix=$(PKGROOT)/$(NAME);	\
-		$(MAKE);					\
-	)
+	echo build
 	
 install::
-	mkdir -p $(ROOT)/$(PKGROOT)/$(NAME)
-	(							\
-		cd $(NAME)-$(VERSION);				\
-		$(MAKE) prefix=$(ROOT)/$(PKGROOT)/$(NAME) install;\
-	)
+	mkdir -p $(ROOT)/etc/init.d/
+	install rocks-dynip $(ROOT)/etc/init.d/
+	mkdir -p $(ROOT)/opt/rocks/lib/python2.6/site-packages/rocks/commands/reconfigure
+	install __init__.py $(ROOT)/opt/rocks/lib/python2.6/site-packages/rocks/commands/reconfigure
+	mkdir -p $(ROOT)/root
+	install net_conf.conf.template $(ROOT)/root
 
 clean::
 	rm -rf $(NAME)-$(VERSION)
