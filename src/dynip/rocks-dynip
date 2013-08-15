@@ -2,7 +2,7 @@
 #
 # $Id: rocks-condor,v 1.14 2012/11/27 00:48:55 phil Exp $
 #
-# chkconfig: 345 90 90
+# chkconfig: 345 92 92
 # description: Reconfigure rocks frontend to use a new network setup
 #
 # @Copyright@
@@ -59,60 +59,61 @@
 # 
 # @Copyright@
 #
-# $Log: rocks-condor,v $
-# Revision 1.14  2012/11/27 00:48:55  phil
-# Copyright Storm for Emerald Boa
-#
-# Revision 1.13  2012/05/06 05:48:58  phil
-# Copyright Storm for Mamba
-#
-# Revision 1.12  2011/07/23 02:30:56  phil
-# Viper Copyright
-#
-# Revision 1.11  2010/09/07 23:53:13  bruno
-# star power for gb
-#
-# Revision 1.10  2009/05/01 19:07:14  mjk
-# chimi con queso
-#
-# Revision 1.9  2008/10/18 00:56:07  mjk
-# copyright 5.1
-#
-# Revision 1.8  2008/03/06 23:41:49  mjk
-# copyright storm on
-#
-# Revision 1.7  2007/06/23 04:03:32  mjk
-# mars hill copyright
-#
-# Revision 1.6  2006/09/11 22:47:56  mjk
-# monkey face copyright
-#
-# Revision 1.5  2006/08/10 00:10:13  mjk
-# 4.2 copyright
-#
-# Revision 1.4  2005/10/12 18:08:59  mjk
-# final copyright for 4.1
-#
-# Revision 1.3  2005/09/16 01:02:33  mjk
-# updated copyright
-#
-# Revision 1.2  2005/05/24 21:22:09  mjk
-# update copyright, release is not any closer
-#
-# Revision 1.1  2005/03/23 20:43:09  nadya
-# clean old entries, reorganize dirs
-#
 #
 
 . /etc/init.d/functions
 
-RECONFIG="/opt/rocks/sbin/reconfig.sh"
+logfile=/var/log/dynip.log
+conf_file="/root/net_conf.conf"
+
+function reconfigFE() {
+
+	#
+	# redirect stdout and stderr 
+	#
+	exec > $logfile 2>&1
+	
+	
+	
+	# dhcp mode
+	if [ ! -f $conf_file ] && [ -f "/etc/rocks-dhcp" ]; then 
+		# we need to generate all the input value from the dhcp issued IPs
+		public_interface=`rocks list attr |grep Kickstart_PublicInterface | awk '{print $2}'`
+		
+		mac=`cat /sys/class/net/$public_interface/address`
+		ip=`ifconfig $public_interface |grep "inet "| awk '{ sub(/addr:/, "", $2); print $2 }'`
+		net_mask=`ifconfig $public_interface |grep "inet "| awk '{ sub(/Mask:/, "", $4); print $4 }'`
+		fqdn=`hostname`
+		gw=`ip r|awk '/default/ {print $3}'`
+		dns=`awk ' /nameserver/ {print $2}' /etc/resolv.conf | grep -v 127.0.0.1`
+		#TODO finsh to fetch the values from the system and write the 
+		echo "public_ip=\"$ip\"" > $conf_file
+		echo "netmask=\"$net_mask\"" >> $conf_file
+		echo "gw=\"gw\"" >> $conf_file
+		echo "dns=\"$dns\"" >> $conf_file
+		echo "fqdn=\"$fqdn\"" >> $conf_file
+		echo '#use these two entries to specify new mac addresses' >> $conf_file
+		echo 'eth0_mac=""' >> $conf_file
+		echo 'eth1_mac=""' >> $conf_file
+	
+	
+	
+	fi
+	
+	/etc/init.d/network stop
+	
+	/opt/rocks/bin/rocks reconfigure $conf_file && mv $conf_file $conf_file.old
+
+
+}
+
+
 
 case "$1" in
     start)
         #action $"Condor Post Installation" $PRECONFIG 2> /dev/null
         echo "Starting dynip...."
-	$RECONFIG
+	reconfigFE
         RETVAL=$?
         ;;
     stop)

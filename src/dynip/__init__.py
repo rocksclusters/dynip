@@ -95,6 +95,8 @@ class Command(command):
 		# gw
 		# dns
 		# fqdn
+		# eth0_mac
+		# eth1_mac
 		execfile(net_conf_file, {}, globals())
 		ip_temp =  IPy.IP(public_ip + '/' + netmask, make_net=True)
 		network_addr = str(ip_temp.net())
@@ -128,8 +130,9 @@ class Command(command):
 		self.command('set.attr', ['Kickstart_PublicDNSDomain', domainname])
 
 		#
-		# database-data.xml
+		# ------  base roll  ------
 		#
+		# database-data.xml
 		self.command('set.network.subnet', ['public', network_addr])
 		self.command('set.network.netmask', ['public', netmask])
 		if domainname != old_domainname :
@@ -145,6 +148,10 @@ class Command(command):
 		self.command('add.route', [public_ip, fix_private_ip, 'netmask=255.255.255.255'])
 		self.command('set.host.interface.ip', [hostname, 'eth1', public_ip])
 		self.command('set.host.interface.name', [hostname, 'eth1', hostname])
+		if eth0_mac :
+			self.command('set.host.interface.mac', [hostname, 'eth0', eth0_mac])
+		if eth1_mac :
+			self.command('set.host.interface.mac', [hostname, 'eth1', eth1_mac])
 
 		# grub-server.xml not fixed in this version
 		# ss.xml not fixed
@@ -182,14 +189,56 @@ rocks report host route localhost | rocks report script | bash;''' % attrs)
 		os.system('sed -i "s/ServerName .*/ServerName %s/g" /etc/httpd/conf.d/rocks.conf' % fqdn)
 		os.system('/etc/init.d/httpd restart')
 
-	def runRocksCommand(self, command):
-		"""we need to wrap around self.command since if a command fails to execute
-		it aborts also this script funciton and we don't want that"""
-		print "running rocks command: " , command
-		ret = os.system('rocks ' + command);
-		if ret != 0:
-			print "command failed"
+		#
+		# end base roll ------
+		#
 
+		# web-server roll not fixed in this release
+		#
+		# ------  ganglia roll  ------
+		#
+		os.system('sed -i "s/data_source .*/data_source %s localhost:8649/g" /etc/ganglia/gmetad.conf' % 
+			hostname)
+		os.system('/opt/rocks/bin/rocks report host ganglia gmond localhost > /etc/ganglia/gmond.conf')
+		os.system('/sbin/service gmond restart')
+		os.system('/sbin/service gmetad restart')
 
-RollName = "base"
+		#
+		# ------  sge roll  ------
+		#
+		if hostname != old_hostname:
+			# wipe sge installation
+			os.system('/sbin/service sgemaster.%s stop' % old_hostname)
+			os.system('/sbin/chkconfig sgemaster.%s off' % old_hostname)
+			os.system('rm /etc/init.d/sgemaster.%s' % old_hostname)
+			os.system('rm -rf /opt/gridengine/default')
+			os.system('sed -i "s/%s/%s/g" /opt/gridengine/util/install_modules/sge_configuration.conf' %
+				(old_hostname, hostname))
+			sge_reconf='''#!/bin/bash
+source /etc/profile.d/sge-binaries.sh
+chown -R 400.400 $SGE_ROOT
+
+echo sge root $SGE_ROOT
+cd $SGE_ROOT && ./inst_sge -m -auto ./util/install_modules/sge_configuration.conf
+/etc/rc.d/init.d/sgemaster.`hostname -s` stop
+echo "%s.%s %s %s" > $SGE_ROOT/$SGE_CELL/common/host_aliases
+
+cat default/common/configuration | sed -e "s/reporting=false/reporting=true/g" -e "s/joblog=false/joblog=true/g" > /tmp/sge-default-common-config.conf
+mv -f /tmp/sge-default-common-config.conf default/common/configuration
+chown 400:400 default/common/configuration
+
+/etc/rc.d/init.d/sgemaster.`hostname -s` start
+
+# add default MPI parallel environments
+$SGE_ROOT/bin/$SGE_ARCH/qconf -Ap $SGE_ROOT/mpi/rocks-mpich.template 
+$SGE_ROOT/bin/$SGE_ARCH/qconf -Ap $SGE_ROOT/mpi/rocks-mpi.template 
+$SGE_ROOT/bin/$SGE_ARCH/qconf -Ap $SGE_ROOT/mpi/rocks-ompi.template 
+$SGE_ROOT/bin/$SGE_ARCH/qconf -as `/bin/hostname --fqdn` 
+$SGE_ROOT/bin/$SGE_ARCH/qconf -rattr queue pe_list 'make mpich mpi orte' all.q 
+/opt/rocks/bin/rocks sync config
+'''
+			os.system(sge_reconf % (hostname, "local", fqdn, hostname))
+			
+			
+			
 
