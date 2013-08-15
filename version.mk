@@ -1,0 +1,6 @@
+ROLLNAME	= dynip
+VERSION		= 6.1
+RELEASE		= 0
+COLOR		= blue
+
+REDHAT.ROOT	= $(CURDIR)
