@@ -95,8 +95,8 @@ class Command(command):
 		# gw
 		# dns
 		# fqdn
-		# eth0_mac
-		# eth1_mac
+		# private_mac
+		# public_mac
 		execfile(net_conf_file, {}, globals())
 		ip_temp =  IPy.IP(public_ip + '/' + netmask, make_net=True)
 		network_addr = str(ip_temp.net())
@@ -115,6 +115,9 @@ class Command(command):
 		old_network_addr = self.db.getHostAttr('localhost', 'Kickstart_PublicNetwork')
 		old_netmask = self.db.getHostAttr('localhost', 'Kickstart_PublicNetmask')
 		fix_private_ip = '10.1.1.1'
+
+		public_interface = self.db.getHostAttr('localhost', 'Kickstart_PublicInterface')
+		private_interface = self.db.getHostAttr('localhost', 'Kickstart_PrivateInterface')
 
 		# 
 		# first let's fix the attrbutes
@@ -146,29 +149,30 @@ class Command(command):
 		self.command('add.route', ['0.0.0.0', gw, 'netmask=0.0.0.0'])
 		self.command('remove.route', [old_ip])
 		self.command('add.route', [public_ip, fix_private_ip, 'netmask=255.255.255.255'])
-		self.command('set.host.interface.ip', [hostname, 'eth1', public_ip])
-		self.command('set.host.interface.name', [hostname, 'eth1', hostname])
-		if eth0_mac :
-			self.command('set.host.interface.mac', [hostname, 'eth0', eth0_mac])
-		if eth1_mac :
-			self.command('set.host.interface.mac', [hostname, 'eth1', eth1_mac])
+		self.command('set.host.interface.ip', [hostname, public_interface, public_ip])
+		self.command('set.host.interface.name', [hostname, public_interface, hostname])
+		if private_mac :
+			self.command('set.host.interface.mac', [hostname, private_interface, private_mac])
+		if public_mac :
+			self.command('set.host.interface.mac', [hostname, public_interface, public_mac])
 
 		# grub-server.xml not fixed in this version
 		# ss.xml not fixed
 		# ca.xml not fixed
 
 		# dns-server.xml
-		os.system('rocks report resolv > resolve.conf')
+		os.system('/opt/rocks/bin/rocks report resolv > resolve.conf')
 		os.system('hostname ' + hostname)
 		self.command('sync.dns', [])
 
 		#needs to do this since rocks sync host network will not work without network :-(
 		attrs = self.db.getHostAttrs(hostname)
-		os.system('''rocks report host dhcpd localhost | rocks report script | bash;
-rocks report host firewall localhost | rocks report script attrs="%s" | bash;
-rocks report host interface localhost | rocks report script | bash;
-rocks report host network localhost | rocks report script | bash;
-rocks report host route localhost | rocks report script | bash;''' % attrs)
+		os.system('''/opt/rocks/bin/rocks report host dhcpd localhost | /opt/rocks/bin/rocks report script | /bin/bash;
+/opt/rocks/bin/rocks report host firewall localhost | /opt/rocks/bin/rocks report script attrs="%s" | /bin/bash;
+/opt/rocks/bin/rocks report host interface localhost | /opt/rocks/bin/rocks report script | /bin/bash;
+/opt/rocks/bin/rocks report host network localhost | /opt/rocks/bin/rocks report script | /bin/bash;
+/opt/rocks/bin/rocks report host route localhost | /opt/rocks/bin/rocks report script | /bin/bash;''' % attrs)
+		os.system('/etc/init.d/network start')
 
 		# yum.xml
 		os.system('sed -i "s/%s/%s/g" /etc/yum.repos.d/rocks-local.repo' % (old_ip, public_ip))

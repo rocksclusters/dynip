@@ -1,10 +1,10 @@
 
-public_ip="137.110.119.102"
+public_ip="123.123.123.123"
 netmask="255.255.255.0"
-gw="137.110.119.1"
+gw="123.123.123.1"
 dns="8.8.8.8"
-fqdn="calit2-119-102.ucsd.edu"
+fqdn="testhostname.testdomain.com"
 #use these two entries to specify new mac addresses
-eth0_mac=""
-eth1_mac=""
+private_mac=""
+public_mac=""
 
