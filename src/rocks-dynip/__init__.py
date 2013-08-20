@@ -72,7 +72,9 @@ class Command(command):
 	<arg optional='1' type='string' name='net_conf_path'>
 	A file containing the network information in a pythoninc format
 	The file must contain the following variables: public_ip, 
-	netmask, gw, dns, and fqdn.
+	netmask, gw, dns, fqdn, private_mac and public_mac
+
+	For an example see /root/net_conf.conf.template
 	</arg>
 
 	<example cmd='reconfigure /root/net_conf.conf'>
