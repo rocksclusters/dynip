@@ -36,7 +36,7 @@ dynip places already a template file in /root/net\_conf.conf_template
 
 
 rocks reconfigure
-=================
+-----------------
 
 This command can be used to reconfigure a frontend using a configuration
 file with the new network parameters:
@@ -45,8 +45,8 @@ file with the new network parameters:
 
 This command is called automatically by the rocks-dynip service at boot time.
 
-DHCP frontend 
-===============
+Frontend with DHCP 
+------------------
 
 To have a frontend which works with DHCP it is necessary to activate rocks-dynip at 
 boot time as indicated above to create a file in /etc with:
