@@ -99,11 +99,11 @@ function reconfigFE() {
 	
 	
 	fi
-	
-	/etc/init.d/network stop
-	
-	/opt/rocks/bin/rocks reconfigure $conf_file && mv $conf_file $conf_file.old
 
+	if [ -f $conf_file ] ; then
+		/etc/init.d/network stop
+		/opt/rocks/bin/rocks reconfigure $conf_file && mv $conf_file $conf_file.old
+	fi
 
 }
 
