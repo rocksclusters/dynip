@@ -153,6 +153,8 @@ class Command(command):
 		self.command('add.route', [public_ip, fix_private_ip, 'netmask=255.255.255.255'])
 		self.command('set.host.interface.ip', [hostname, public_interface, public_ip])
 		self.command('set.host.interface.name', [hostname, public_interface, hostname])
+		self.command('set.host.interface.name', [hostname, private_interface, hostname])
+
 		if private_mac :
 			self.command('set.host.interface.mac', [hostname, private_interface, private_mac])
 		if public_mac :
