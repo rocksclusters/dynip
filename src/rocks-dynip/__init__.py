@@ -166,7 +166,7 @@ class Command(command):
 
 		# dns-server.xml
 		os.system('/opt/rocks/bin/rocks report resolv > resolve.conf')
-		os.system('hostname ' + hostname)
+		os.system('hostname ' + fqdn)
 		self.command('sync.dns', [])
 
 		#needs to do this since rocks sync host network will not work without network :-(
