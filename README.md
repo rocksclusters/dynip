@@ -51,7 +51,11 @@ Frontend with DHCP
 To have a frontend which works with DHCP it is necessary to activate rocks-dynip at 
 boot time as indicated above to create a file in /etc with:
 
-  rouch /etc/rocks-dhcp
+  touch /etc/rocks-dhcp
+
+And set the pubblic interface to dhcp:
+
+  rocks set host interface options localhost eth1 dhcp
 
 After these two steps the frontend will DHCP and reconfigure itself based upon 
 it's IP address received from the DHCP
