@@ -58,6 +58,7 @@
 import string
 import os.path
 import rocks.commands
+import xml.etree.ElementTree
 import IPy
 
 class command(rocks.commands.Command):
@@ -69,15 +70,16 @@ class Command(command):
 	"""
 	Reconfigure a frontend to use a new IP address.
 
-	<arg optional='1' type='string' name='net_conf_path'>
-	A file containing the network information in a pythoninc format
-	The file must contain the following variables: public_ip, 
-	netmask, gw, dns, fqdn, private_mac and public_mac
+	<arg optional='1' type='string' name='vc-out.xml'>
+	A file containing the network information in a xml format
 
-	For an example see /root/net_conf.conf.template
+	The file should be in the format specified in the README file:
+	https://github.com/pragmagrid/pragma_boot/tree/master
+
+	For an example see /root/vc-out.xml.template
 	</arg>
 
-	<example cmd='reconfigure /root/net_conf.conf'>
+	<example cmd='reconfigure /root/vc-out.xml'>
 	Reconfigure the frontend
 	</example>
 	"""
@@ -85,27 +87,44 @@ class Command(command):
 	def run(self, params, args):
 
 		if len(args) != 1 :
-			self.abort('You need to pass the net_conf.conf file as input')
+			self.abort('You need to pass the vc-out.xml file as input')
 
-		net_conf_file = args[0]
-		if not os.path.isfile(net_conf_file):
-			self.abort('The %s path does not point to a valid file' % net_conf_file)
+		vc_out_file = args[0]
+		if not os.path.isfile(vc_out_file):
+			self.abort('The %s path does not point to a valid file' % vc_out_file)
 
-		# get new config values with quick and dirty trick, add the follwing variables:
-		# public_ip
-		# netmask
-		# gw
-		# dns
-		# fqdn
-		# private_mac
-		# public_mac
-		execfile(net_conf_file, {}, globals())
+		# get new config values
+		vc_out_xmlroot = xml.etree.ElementTree.parse(vc_out_file).getroot()
+		# public interface
+		pubblic_node = vc_out_xmlroot.findall('./frontend/public')[0]
+		public_ip = pubblic_node.attrib["ip"]
+		fqdn = pubblic_node.attrib["fqdn"]
+		netmask = pubblic_node.attrib["netmask"]
+		gw = pubblic_node.attrib["gw"]
+		dns_node = vc_out_xmlroot.findall('./network/dns')[0]
+		dns_servers = dns_node.attrib["ip"]
+		if 'mac' in pubblic_node.attrib:
+			public_mac = pubblic_node.attrib["mac"]
+		else:
+			public_mac = ""
+		# private interface
+		private_node = vc_out_xmlroot.findall('./frontend/private')[0]
+		private_ip = private_node.attrib["ip"]
+		private_netmask = private_node.attrib["netmask"]
+		if 'mac' in private_node.attrib:
+			private_mac = private_node.attrib["mac"]
+		else:
+			private_mac = ""
+
+
 		ip_temp =  IPy.IP(public_ip + '/' + netmask, make_net=True)
 		network_addr = str(ip_temp.net())
 		broad_cast = str(ip_temp.broadcast())
 		hostname = fqdn.split('.')[0]
 		domainname = fqdn[fqdn.find('.') + 1:]
 
+		ip_temp =  IPy.IP(private_ip + '/' + private_netmask,  make_net=True)
+		private_network_addr = str(ip_temp.net())
 
 		# get old attribute values before overwriting
 		old_fqdn = self.db.getHostAttr('localhost', 'Kickstart_PublicHostname')
@@ -116,7 +135,6 @@ class Command(command):
 		old_gw = self.db.getHostAttr('localhost', 'Kickstart_PublicGateway')
 		old_network_addr = self.db.getHostAttr('localhost', 'Kickstart_PublicNetwork')
 		old_netmask = self.db.getHostAttr('localhost', 'Kickstart_PublicNetmask')
-		fix_private_ip = '10.1.1.1'
 
 		public_interface = self.db.getHostAttr('localhost', 'Kickstart_PublicInterface')
 		private_interface = self.db.getHostAttr('localhost', 'Kickstart_PrivateInterface')
@@ -133,6 +151,7 @@ class Command(command):
 		self.command('set.attr', ['Kickstart_PublicNetwork', network_addr])
 		self.command('set.attr', ['Kickstart_PublicNetmask', netmask])
 		self.command('set.attr', ['Kickstart_PublicDNSDomain', domainname])
+		self.command('set.attr', ['Kickstart_PublicDNSServers', dns_servers])
 
 		#
 		# ------  base roll  ------
@@ -140,6 +159,8 @@ class Command(command):
 		# database-data.xml
 		self.command('set.network.subnet', ['public', network_addr])
 		self.command('set.network.netmask', ['public', netmask])
+		self.command('set.network.subnet', ['private', private_network_addr])
+		self.command('set.network.netmask', ['private', private_netmask])
 		if domainname != old_domainname :
 			self.command('set.network.zone', ['public', domainname])
 		
@@ -150,10 +171,11 @@ class Command(command):
 		self.command('remove.route', ['0.0.0.0'])
 		self.command('add.route', ['0.0.0.0', gw, 'netmask=0.0.0.0'])
 		self.command('remove.route', [old_ip])
-		self.command('add.route', [public_ip, fix_private_ip, 'netmask=255.255.255.255'])
+		self.command('add.route', [public_ip, private_ip, 'netmask=255.255.255.255'])
 		self.command('set.host.interface.ip', [hostname, public_interface, public_ip])
 		self.command('set.host.interface.name', [hostname, public_interface, hostname])
 		self.command('set.host.interface.name', [hostname, private_interface, hostname])
+		self.command('set.host.interface.ip', [hostname, private_interface, private_ip])
 
 		if private_mac :
 			self.command('set.host.interface.mac', [hostname, private_interface, private_mac])
