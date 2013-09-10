@@ -71,7 +71,7 @@ install::
 	mkdir -p $(ROOT)/opt/rocks/lib/python2.6/site-packages/rocks/commands/reconfigure
 	install __init__.py $(ROOT)/opt/rocks/lib/python2.6/site-packages/rocks/commands/reconfigure
 	mkdir -p $(ROOT)/root
-	install net_conf.conf.template $(ROOT)/root
+	install vc-out.xml.template $(ROOT)/root
 
 clean::
 	rm -rf $(NAME)-$(VERSION)
