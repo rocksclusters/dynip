@@ -61,7 +61,7 @@ import rocks.commands
 import xml.etree.ElementTree
 import IPy
 
-class command(rocks.commands.Command):
+class command(rocks.commands.HostArgumentProcessor, rocks.commands.Command):
 	MustBeRoot = 0
 		
 
@@ -86,15 +86,17 @@ class Command(command):
 	
 	def run(self, params, args):
 
+
 		if len(args) != 1 :
 			self.abort('You need to pass the vc-out.xml file as input')
 
-		vc_out_file = args[0]
-		if not os.path.isfile(vc_out_file):
-			self.abort('The %s path does not point to a valid file' % vc_out_file)
+		net_conf_file = args[0]
+		if not os.path.isfile(net_conf_file):
+			self.abort('The %s path does not point to a valid file' % net_conf_file)
 
 		# get new config values
-		vc_out_xmlroot = xml.etree.ElementTree.parse(vc_out_file).getroot()
+		vc_out_xmlroot = xml.etree.ElementTree.parse(net_conf_file).getroot()
+
 		# public interface
 		pubblic_node = vc_out_xmlroot.findall('./frontend/public')[0]
 		public_ip = pubblic_node.attrib["ip"]
@@ -268,7 +270,36 @@ $SGE_ROOT/bin/$SGE_ARCH/qconf -rattr queue pe_list 'make mpich mpi orte' all.q
 /opt/rocks/bin/rocks sync config
 '''
 			os.system(sge_reconf % (hostname, "local", fqdn, hostname))
-			
-			
-			
+
+		#
+		# adding compute node to the DB
+		#
+
+		# remove all the compute nodes
+		for host in self.getHostnames(["compute"]):
+			self.command('remove.host', [host])
+		# reload the database
+		rank = 0
+		for node_xml in vc_out_xmlroot.findall('./compute/node'):
+			hostname = node_xml.attrib["name"]
+			ip = node_xml.attrib["ip"]
+			if 'cpus' in node_xml.attrib:
+				cpus = node_xml.attrib['cpus']
+			else:
+				#we can just assume
+				cpus = '1'
+			self.command('add.host', [hostname, 'cpus=' + cpus,
+				'membership=compute', 'os=linux', 'rack=0',
+				'rank=' + str(rank)])
+
+			self.command('add.host.interface', [hostname, 'eth0',
+				'ip=' + node_xml.attrib["ip"], 'subnet=private'])
+
+			if 'mac' in node_xml.attrib:
+				self.command('set.host.interface.mac', [hostname,
+					'eth0', node_xml.attrib['mac']])
+			rank += 1
+
+		#sync config
+                self.command('sync.config', [])
 
