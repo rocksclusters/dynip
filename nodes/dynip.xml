@@ -20,5 +20,20 @@
 	<package>rocks-dynip</package>
 	<package>roll-dynip-usersguide</package>
 
+<post cond="rocks-dynip">
+
+
+# remove udev old network rules
+rm -f /etc/udev/rules.d/70-persistent-net.rules
+rm -f /etc/sysconfig/network-scripts/ifcfg-eth0
+rm -f /etc/sysconfig/network-scripts/ifcfg-eth1
+
+ssh compute-0-0 rm -f /etc/sysconfig/network-scripts/ifcfg-eth0
+ssh compute-0-0 rm -f /etc/udev/rules.d/70-persistent-net.rules
+#TODO develop package for client
+#ssh compute-0-0 yum install rocks-dynip-client
+
+
+<post>
 
 </kickstart>
