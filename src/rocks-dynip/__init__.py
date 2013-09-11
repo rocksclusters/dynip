@@ -109,6 +109,12 @@ class Command(command):
 			public_mac = pubblic_node.attrib["mac"]
 		else:
 			public_mac = ""
+		ip_temp =  IPy.IP(public_ip + '/' + netmask, make_net=True)
+		network_addr = str(ip_temp.net())
+		broad_cast = str(ip_temp.broadcast())
+		hostname = fqdn.split('.')[0]
+		domainname = fqdn[fqdn.find('.') + 1:]
+
 		# private interface
 		private_node = vc_out_xmlroot.findall('./frontend/private')[0]
 		private_ip = private_node.attrib["ip"]
@@ -117,16 +123,9 @@ class Command(command):
 			private_mac = private_node.attrib["mac"]
 		else:
 			private_mac = ""
-
-
-		ip_temp =  IPy.IP(public_ip + '/' + netmask, make_net=True)
-		network_addr = str(ip_temp.net())
-		broad_cast = str(ip_temp.broadcast())
-		hostname = fqdn.split('.')[0]
-		domainname = fqdn[fqdn.find('.') + 1:]
-
 		ip_temp =  IPy.IP(private_ip + '/' + private_netmask,  make_net=True)
 		private_network_addr = str(ip_temp.net())
+
 
 		# get old attribute values before overwriting
 		old_fqdn = self.db.getHostAttr('localhost', 'Kickstart_PublicHostname')
@@ -275,12 +274,17 @@ $SGE_ROOT/bin/$SGE_ARCH/qconf -rattr queue pe_list 'make mpich mpi orte' all.q
 		# adding compute node to the DB
 		#
 
+		xml_nodes = vc_out_xmlroot.findall('./compute/node')
+		if not xml_nodes:
+			# no nodes xml tag we do not need to sync up the node list DB
+			return 
+
 		# remove all the compute nodes
 		for host in self.getHostnames(["compute"]):
 			self.command('remove.host', [host])
 		# reload the database
 		rank = 0
-		for node_xml in vc_out_xmlroot.findall('./compute/node'):
+		for node_xml in xml_nodes:
 			hostname = node_xml.attrib["name"]
 			ip = node_xml.attrib["ip"]
 			if 'cpus' in node_xml.attrib:

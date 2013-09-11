@@ -64,7 +64,7 @@
 . /etc/init.d/functions
 
 logfile=/var/log/dynip.log
-conf_file="/root/net_conf.conf"
+vc_out="/root/vc-out.xml"
 
 function reconfigFE() {
 
@@ -76,28 +76,34 @@ function reconfigFE() {
 	
 	
 	# dhcp mode
-	if [ ! -f $conf_file ] && [ -f "/etc/rocks-dhcp" ]; then 
+	if [ ! -f $vc_out ] && [ -f "/etc/rocks-dhcp" ]; then
 		# we need to generate all the input value from the dhcp issued IPs
 		public_interface=`rocks list attr |grep Kickstart_PublicInterface | awk '{print $2}'`
 		
-		mac=`cat /sys/class/net/$public_interface/address`
+		mac_public=`cat /sys/class/net/$public_interface/address`
 		ip=`ifconfig $public_interface |grep "inet "| awk '{ sub(/addr:/, "", $2); print $2 }'`
 		net_mask=`ifconfig $public_interface |grep "inet "| awk '{ sub(/Mask:/, "", $4); print $4 }'`
 		fqdn=`hostname`
 		gw=`ip r|awk '/default/ {print $3}'`
 		dns=`awk ' /nameserver/ {print $2}' /etc/resolv.conf | grep -v 127.0.0.1`
-		#TODO finsh to fetch the values from the system and write the 
-		echo "public_ip=\"$ip\"" > $conf_file
-		echo "netmask=\"$net_mask\"" >> $conf_file
-		echo "gw=\"gw\"" >> $conf_file
-		echo "dns=\"$dns\"" >> $conf_file
-		echo "fqdn=\"$fqdn\"" >> $conf_file
-		echo '#use these two entries to specify new mac addresses' >> $conf_file
-		echo 'eth0_mac=""' >> $conf_file
-		echo 'eth1_mac=""' >> $conf_file
-	
-	
-	
+
+		private_interface=`rocks list attr |grep Kickstart_PrivateInterface | awk '{print $2}'`
+		private_ip=`ifconfig $private_interface |grep "inet "| awk '{ sub(/addr:/, "", $2); print $2 }'`
+		private_netmask=`ifconfig $private_interface|grep "inet "| awk '{ sub(/Mask:/, "", $4); print $4 }'`
+		mac_private=`cat /sys/class/net/$private_interface/address`
+
+		echo '<vc>' > $vc_out
+		echo "  <frontend>" >> $vc_out
+		echo "    <public fqdn=\"$fqdn\" ip=\"$ip\" netmask=\"$net_mask\" gw=\"$gw\" mac=\"$mac_public\" />" >> $vc_out
+		echo "    <private ip=\"$private_ip\" netmask=\"$private_netmask\" mac=\"$mac_private\"/>" >> $vc_out
+		echo "  </frontend>" >> $vc_out
+		echo "  <compute count=\"0\">" >> $vc_out
+		echo "  </compute>" >> $vc_out
+		echo "  <network>" >> $vc_out
+		echo "    <dns ip=\"$dns\" search=\"local\" domain=\"\"/>" >> $vc_out
+		echo "  </network>" >> $vc_out
+		echo "</vc>" >> $vc_out
+
 	fi
 
 	if [ -f $conf_file ] ; then
