@@ -79,6 +79,11 @@ class Command(command):
 	For an example see /root/vc-out.xml.template
 	</arg>
 
+	<param type='bool' name='compute'>
+	It should be set to true when run on a compute node, by defualt
+	is false
+	</param>
+
 	<example cmd='reconfigure /root/vc-out.xml'>
 	Reconfigure the frontend
 	</example>
@@ -86,6 +91,11 @@ class Command(command):
 	
 	def run(self, params, args):
 
+		(compute) = self.fillParams( [
+			('compute', 'n'),
+			])
+
+		compute = self.str2bool(compute)
 
 		if len(args) != 1 :
 			self.abort('You need to pass the vc-out.xml file as input')
@@ -96,6 +106,62 @@ class Command(command):
 
 		# get new config values
 		vc_out_xmlroot = xml.etree.ElementTree.parse(net_conf_file).getroot()
+
+		# authorize ssh key
+		ssh_key = vc_out_xmlroot.findall('./key')
+		if ssh_key :
+			print "Authorizing ssh key"
+			f = open('/root/.ssh/authorized_keys', 'a')
+			f.write(ssh_key[0].text.strip() + '\n')
+			f.close()
+
+		if compute :
+			print "Fixing compute node"
+			self.fixCompute(vc_out_xmlroot)
+		else:
+			print "Fixing frontend"
+			self.fixFrontend(vc_out_xmlroot)
+
+
+	def fixCompute(self, vc_out_xmlroot):
+		"""fix a compute node network based on the vc-out.xml"""
+		xml_node = vc_out_xmlroot.findall('./compute/private')[0]
+		private_ip = xml_node.attrib["ip"]
+		fqdn = xml_node.attrib["fqdn"]
+		netmask = xml_node.attrib["netmask"]
+		gw = xml_node.attrib["gw"]
+		# write ifcfg up script
+		ifup_str = 'DEVICE=eth0\nIPADDR=%s\nNETMASK=%s\n' % (private_ip, netmask)
+		ifup_str += 'BOOTPROTO=none\nONBOOT=yes\nMTU=1500\n'
+		if 'mac' in xml_node.attrib:
+			ifup_str += 'HWADDR=%s\n' % xml_node.attrib["mac"]
+		self.write_file('/etc/sysconfig/network-scripts/ifcfg-eth0', ifup_str)
+
+		# write resolve.conf
+		# in rocks compute node we use the FE as DNS server
+		self.write_file('/etc/resolv.conf', 'search local\nnameserver %s\n' % gw)
+
+		# write syconfig/network
+		self.write_file('/etc/sysconfig/network',
+			'NETWORKING=yes\nHOSTNAME=%s.local\nGATEWAY=%s\n' % (fqdn, gw))
+
+		# write /etc/hosts
+		hosts_str = '127.0.0.1\tlocalhost.localdomain localhost\n'
+		hosts_str += '%s\t%s.local %s\n' % (private_ip, fqdn, fqdn)
+		self.write_file('/etc/hosts', hosts_str)
+
+
+
+	def write_file(self, file_name, content):
+		"""write the content in the file_name"""
+		f = open(file_name, 'w')
+		f.write(content)
+		f.close()
+
+
+
+	def fixFrontend(self, vc_out_xmlroot):
+		"""fix a frontend based on the vc-out.xml file"""
 
 		# public interface
 		pubblic_node = vc_out_xmlroot.findall('./frontend/public')[0]
@@ -126,13 +192,6 @@ class Command(command):
 		ip_temp =  IPy.IP(private_ip + '/' + private_netmask,  make_net=True)
 		private_network_addr = str(ip_temp.net())
 
-		# authorize ssh key
-		ssh_key = vc_out_xmlroot.findall('./key')
-		if ssh_key :
-			print "Authorizing ssh key"
-			f = open('/root/.ssh/authorized_keys', 'a')
-			f.write(ssh_key[0].text.strip() + '\n')
-			f.close()
 
 		# get old attribute values before overwriting
 		old_fqdn = self.db.getHostAttr('localhost', 'Kickstart_PublicHostname')
