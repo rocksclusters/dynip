@@ -126,6 +126,13 @@ class Command(command):
 		ip_temp =  IPy.IP(private_ip + '/' + private_netmask,  make_net=True)
 		private_network_addr = str(ip_temp.net())
 
+		# authorize ssh key
+		ssh_key = vc_out_xmlroot.findall('./key')
+		if ssh_key :
+			print "Authorizing ssh key"
+			f = open('/root/.ssh/authorized_keys', 'a')
+			f.write(ssh_key[0].text.strip() + '\n')
+			f.close()
 
 		# get old attribute values before overwriting
 		old_fqdn = self.db.getHostAttr('localhost', 'Kickstart_PublicHostname')
