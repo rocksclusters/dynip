@@ -68,8 +68,6 @@ build:
 install::
 	mkdir -p $(ROOT)/etc/init.d/
 	install rocks-dynip $(ROOT)/etc/init.d/
-	mkdir -p $(ROOT)/opt/rocks/lib/python2.6/site-packages/rocks/commands/reconfigure
-	install __init__.py $(ROOT)/opt/rocks/lib/python2.6/site-packages/rocks/commands/reconfigure
 	mkdir -p $(ROOT)/root
 	install vc-out.xml.template $(ROOT)/root
 
