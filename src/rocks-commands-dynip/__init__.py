@@ -91,7 +91,7 @@ class Command(command):
 	
 	def run(self, params, args):
 
-		(compute) = self.fillParams( [
+		(compute, ) = self.fillParams( [
 			('compute', 'n'),
 			])
 
@@ -150,6 +150,21 @@ class Command(command):
 		hosts_str += '%s\t%s.local %s\n' % (private_ip, fqdn, fqdn)
 		self.write_file('/etc/hosts', hosts_str)
 
+		# write static-routes
+		#static_str = 'any host %s gw %s\n' % (??, private_ip)
+		static_str = 'any net 224.0.0.0 netmask 255.255.255.0 dev eth0'
+		static_str += 'any host 255.255.255.255 dev eth0'
+		self.write_file('/etc/sysconfig/static-routes', static_str)
+
+		# write shost.equiv
+		self.write_file('/etc/ssh/shosts.equiv',
+			'%s\n%s\n' % (private_ip, gw))
+
+		# write yum.repo
+		repo_str = '[Rocks-6.1]\nname=Rocks 6.1\n'
+		repo_str += 'baseurl=http://%s/install/rocks-dist/x86_64' % private_ip
+		repo_str += 'enabled = 1'
+		self.write_file('/etc/yum.repos.d/rocks-local.repo', repo_str)
 
 
 	def write_file(self, file_name, content):
@@ -157,7 +172,6 @@ class Command(command):
 		f = open(file_name, 'w')
 		f.write(content)
 		f.close()
-
 
 
 	def fixFrontend(self, vc_out_xmlroot):
