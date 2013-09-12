@@ -106,9 +106,9 @@ function reconfigFE() {
 
 	fi
 
-	if [ -f $conf_file ] ; then
+	if [ -f $vc_out ] ; then
 		/etc/init.d/network stop
-		/opt/rocks/bin/rocks reconfigure $conf_file && mv $conf_file $conf_file.old
+		/opt/rocks/bin/rocks reconfigure $vc_out && mv $vc_out $vc_out.old
 	fi
 
 }
