@@ -29,12 +29,10 @@
 rm -f /etc/udev/rules.d/70-persistent-net.rules
 rm -f /etc/sysconfig/network-scripts/ifcfg-eth0
 rm -f /etc/sysconfig/network-scripts/ifcfg-eth1
+chkconfig rocks-dynip on
 
 ssh compute-0-0 rm -f /etc/sysconfig/network-scripts/ifcfg-eth0
 ssh compute-0-0 rm -f /etc/udev/rules.d/70-persistent-net.rules
-#
-chkconfig rocks-dynip on
-
 ssh compute-0-0 yum install rocks-dynip-compute
 ssh compute-0-0 chkconfig rocks-dynip on
 ssh compute-0-0 rocks-grub off
