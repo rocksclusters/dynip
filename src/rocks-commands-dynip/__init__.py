@@ -382,6 +382,9 @@ $SGE_ROOT/bin/$SGE_ARCH/qconf -rattr queue pe_list 'make mpich mpi orte' all.q
 			if 'mac' in node_xml.attrib:
 				self.command('set.host.interface.mac', [hostname,
 					'eth0', node_xml.attrib['mac']])
+
+			# set the host to boot in OS mode
+			self.command('set.host.boot', [hostname, 'action=os'])
 			rank += 1
 
 		#sync config
