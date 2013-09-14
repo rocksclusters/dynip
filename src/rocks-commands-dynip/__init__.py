@@ -152,8 +152,8 @@ class Command(command):
 
 		# write static-routes
 		#static_str = 'any host %s gw %s\n' % (??, private_ip)
-		static_str = 'any net 224.0.0.0 netmask 255.255.255.0 dev eth0'
-		static_str += 'any host 255.255.255.255 dev eth0'
+		static_str = 'any net 224.0.0.0 netmask 255.255.255.0 dev eth0\n'
+		static_str += 'any host 255.255.255.255 dev eth0\n'
 		self.write_file('/etc/sysconfig/static-routes', static_str)
 
 		# write shost.equiv
@@ -162,8 +162,8 @@ class Command(command):
 
 		# write yum.repo
 		repo_str = '[Rocks-6.1]\nname=Rocks 6.1\n'
-		repo_str += 'baseurl=http://%s/install/rocks-dist/x86_64' % private_ip
-		repo_str += 'enabled = 1'
+		repo_str += 'baseurl=http://%s/install/rocks-dist/x86_64\n' % gw
+		repo_str += 'enabled = 1\n'
 		self.write_file('/etc/yum.repos.d/rocks-local.repo', repo_str)
 
 
