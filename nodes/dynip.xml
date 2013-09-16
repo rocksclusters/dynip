@@ -18,13 +18,11 @@
 	</changelog>
 
 	<package>rocks-commands-dynip</package>
-	<package cond="appliance == 'compute'">rocks-dynip-compute</pakcage>
+	<package cond="appliance == 'compute'">rocks-dynip-compute</package>
 	<package cond="appliance == 'frontend'">rocks-dynip-frontend</package>
 	<package>roll-dynip-usersguide</package>
 
-<post cond="rocks-dynip">
-
-
+<post cond="rocks_dynip">
 # remove udev old network rules
 rm -f /etc/udev/rules.d/70-persistent-net.rules
 rm -f /etc/sysconfig/network-scripts/ifcfg-eth0
@@ -35,9 +33,9 @@ ssh compute-0-0 rm -f /etc/sysconfig/network-scripts/ifcfg-eth0
 ssh compute-0-0 rm -f /etc/udev/rules.d/70-persistent-net.rules
 ssh compute-0-0 yum install rocks-dynip-compute
 ssh compute-0-0 chkconfig rocks-dynip on
+ssh compute-0-0 chkconfig rocks-dynip-post on
 ssh compute-0-0 rocks-grub off
 
-
-<post>
+</post>
 
 </kickstart>
