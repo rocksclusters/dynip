@@ -278,7 +278,8 @@ class Command(command):
 /opt/rocks/bin/rocks report host firewall localhost | /opt/rocks/bin/rocks report script attrs="%s" | /bin/bash;
 /opt/rocks/bin/rocks report host interface localhost | /opt/rocks/bin/rocks report script | /bin/bash;
 /opt/rocks/bin/rocks report host network localhost | /opt/rocks/bin/rocks report script | /bin/bash;
-/opt/rocks/bin/rocks report host route localhost | /opt/rocks/bin/rocks report script | /bin/bash;''' % attrs)
+/opt/rocks/bin/rocks report host route localhost | /opt/rocks/bin/rocks report script | /bin/bash;
+/opt/rocks/bin/rocks report host > /etc/hosts;''' % attrs)
 		os.system('/etc/init.d/network start')
 
 		# yum.xml
