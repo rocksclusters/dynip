@@ -57,6 +57,7 @@
 
 import string
 import os.path
+import os
 import rocks.commands
 import xml.etree.ElementTree
 import IPy
@@ -84,6 +85,13 @@ class Command(command):
 	is false
 	</param>
 
+	<param type='bool' name='computepost'>
+	It should be set to true when run on a compute node as one of the
+	last init script (compute is on of the first init script while
+	computepost is one of the last), by default is false
+	computepost currently is only used to fix SGE
+	</param>
+
 	<example cmd='reconfigure /root/vc-out.xml'>
 	Reconfigure the frontend
 	</example>
@@ -91,11 +99,13 @@ class Command(command):
 	
 	def run(self, params, args):
 
-		(compute, ) = self.fillParams( [
+		(compute, computepost) = self.fillParams( [
 			('compute', 'n'),
+			('computepost', 'n'),
 			])
 
 		compute = self.str2bool(compute)
+		computepost = self.str2bool(computepost)
 
 		if len(args) != 1 :
 			self.abort('You need to pass the vc-out.xml file as input')
@@ -117,13 +127,13 @@ class Command(command):
 
 		if compute :
 			print "Fixing compute node"
-			self.fixCompute(vc_out_xmlroot)
+			self.fixCompute(vc_out_xmlroot, computepost)
 		else:
 			print "Fixing frontend"
 			self.fixFrontend(vc_out_xmlroot)
 
 
-	def fixCompute(self, vc_out_xmlroot):
+	def fixCompute(self, vc_out_xmlroot, computepost):
 		"""fix a compute node network based on the vc-out.xml"""
 		xml_node = vc_out_xmlroot.findall('./compute/private')[0]
 		private_ip = xml_node.attrib["ip"]
@@ -132,42 +142,91 @@ class Command(command):
 		gw = xml_node.attrib["gw"]
 		fe_fqdn = vc_out_xmlroot.findall('./frontend/public')[0].attrib["fqdn"]
 
-		# write ifcfg up script
-		ifup_str = 'DEVICE=eth0\nIPADDR=%s\nNETMASK=%s\n' % (private_ip, netmask)
-		ifup_str += 'BOOTPROTO=none\nONBOOT=yes\nMTU=1500\n'
-		if 'mac' in xml_node.attrib:
-			ifup_str += 'HWADDR=%s\n' % xml_node.attrib["mac"]
-		self.write_file('/etc/sysconfig/network-scripts/ifcfg-eth0', ifup_str)
+		if not computepost:
+			# write ifcfg up script
+			ifup_str = 'DEVICE=eth0\nIPADDR=%s\nNETMASK=%s\n' % (private_ip, netmask)
+			ifup_str += 'BOOTPROTO=none\nONBOOT=yes\nMTU=1500\n'
+			if 'mac' in xml_node.attrib:
+				ifup_str += 'HWADDR=%s\n' % xml_node.attrib["mac"]
+			self.write_file('/etc/sysconfig/network-scripts/ifcfg-eth0', ifup_str)
+	
+			# write resolve.conf
+			# in rocks compute node we use the FE as DNS server
+			self.write_file('/etc/resolv.conf', 'search local\nnameserver %s\n' % gw)
+	
+			# write syconfig/network
+			self.write_file('/etc/sysconfig/network',
+				'NETWORKING=yes\nHOSTNAME=%s.local\nGATEWAY=%s\n' % (fqdn, gw))
+	
+			# write /etc/hosts
+			hosts_str = '127.0.0.1\tlocalhost.localdomain localhost\n'
+			hosts_str += '%s\t%s.local %s\n' % (private_ip, fqdn, fqdn)
+			hosts_str += '%s\t%s\n' % (gw, fe_fqdn)
+			self.write_file('/etc/hosts', hosts_str)
+	
+			# write static-routes
+			#static_str = 'any host %s gw %s\n' % (??, private_ip)
+			static_str = 'any net 224.0.0.0 netmask 255.255.255.0 dev eth0\n'
+			static_str += 'any host 255.255.255.255 dev eth0\n'
+			self.write_file('/etc/sysconfig/static-routes', static_str)
+	
+			# write shost.equiv
+			self.write_file('/etc/ssh/shosts.equiv',
+				'%s\n%s\n' % (private_ip, gw))
+	
+			# write yum.repo
+			repo_str = '[Rocks-6.1]\nname=Rocks 6.1\n'
+			repo_str += 'baseurl=http://%s/install/rocks-dist/x86_64\n' % gw
+			repo_str += 'enabled = 1\n'
+			self.write_file('/etc/yum.repos.d/rocks-local.repo', repo_str)
+	
+			# manually set the hostname in case the 
+			os.system('hostname ' + fqdn)
 
-		# write resolve.conf
-		# in rocks compute node we use the FE as DNS server
-		self.write_file('/etc/resolv.conf', 'search local\nnameserver %s\n' % gw)
+		else:
+			#
+			# SGE now running as a last init script
+			# I need the network up and running to configure SGE
+			#
+	
+			#find old FEname
+			old_fe_name = [ i for i in os.listdir('/etc/init.d/') if i.startswith('sgeexecd') ]
+			if len(old_fe_name) != 1:
+				os.system('ls /etc/init.d/')
+				self.abort('Unable to find old frontend name from sgeexecd script')
+			old_fe_name = old_fe_name[0].split('.')[1].strip()
+	
+			sge_reconfigure = '''#!/bin/bash
+. /etc/profile.d/sge-binaries.sh
 
-		# write syconfig/network
-		self.write_file('/etc/sysconfig/network',
-			'NETWORKING=yes\nHOSTNAME=%s.local\nGATEWAY=%s\n' % (fqdn, gw))
+oldfename=%s
+newfename=%s
+newhostname=%s
 
-		# write /etc/hosts
-		hosts_str = '127.0.0.1\tlocalhost.localdomain localhost\n'
-		hosts_str += '%s\t%s.local %s\n' % (private_ip, fqdn, fqdn)
-		hosts_str += '%s\t%s\n' % (gw, fe_fqdn)
-		self.write_file('/etc/hosts', hosts_str)
+chkconfig sgeexecd.$oldfename off
+rm -f /etc/init.d/sgeexecd.$oldfename
+rm -rf $SGE_ROOT/$SGE_CELL/spool/*
 
-		# write static-routes
-		#static_str = 'any host %s gw %s\n' % (??, private_ip)
-		static_str = 'any net 224.0.0.0 netmask 255.255.255.0 dev eth0\n'
-		static_str += 'any host 255.255.255.255 dev eth0\n'
-		self.write_file('/etc/sysconfig/static-routes', static_str)
+list_files="default/common/settings.sh default/common/settings.csh"
+list_files="$list_files default/common/act_qmaster default/common/cluster_name"
+list_files="$list_files default/common/sgeexecd util/install_modules/sge_host_config.conf"
 
-		# write shost.equiv
-		self.write_file('/etc/ssh/shosts.equiv',
-			'%s\n%s\n' % (private_ip, gw))
+for i in $list_files; do
+        sed -i "s/$oldfename/$newfename/g" $SGE_ROOT/$i
+done
 
-		# write yum.repo
-		repo_str = '[Rocks-6.1]\nname=Rocks 6.1\n'
-		repo_str += 'baseurl=http://%s/install/rocks-dist/x86_64\n' % gw
-		repo_str += 'enabled = 1\n'
-		self.write_file('/etc/yum.repos.d/rocks-local.repo', repo_str)
+mkdir -p $SGE_ROOT/default/spool/qmaster
+
+# sets the ownership to sge user
+chown -R 400.400 $SGE_ROOT
+
+# sets up the execution node 
+cd $SGE_ROOT && \
+        ./inst_sge -noremote -x -auto \
+        ./util/install_modules/sge_host_config.conf
+'''
+			os.system(sge_reconfigure % (old_fe_name, fe_fqdn, fqdn))
+
 
 
 	def write_file(self, file_name, content):
