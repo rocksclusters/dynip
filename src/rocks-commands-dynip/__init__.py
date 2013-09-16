@@ -130,6 +130,8 @@ class Command(command):
 		fqdn = xml_node.attrib["fqdn"]
 		netmask = xml_node.attrib["netmask"]
 		gw = xml_node.attrib["gw"]
+		fe_fqdn = vc_out_xmlroot.findall('./frontend/public')[0].attrib["fqdn"]
+
 		# write ifcfg up script
 		ifup_str = 'DEVICE=eth0\nIPADDR=%s\nNETMASK=%s\n' % (private_ip, netmask)
 		ifup_str += 'BOOTPROTO=none\nONBOOT=yes\nMTU=1500\n'
@@ -148,6 +150,7 @@ class Command(command):
 		# write /etc/hosts
 		hosts_str = '127.0.0.1\tlocalhost.localdomain localhost\n'
 		hosts_str += '%s\t%s.local %s\n' % (private_ip, fqdn, fqdn)
+		hosts_str += '%s\t%s\n' % (gw, fe_fqdn)
 		self.write_file('/etc/hosts', hosts_str)
 
 		# write static-routes
