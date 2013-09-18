@@ -190,18 +190,18 @@ class Command(command):
 			#
 	
 			#find old FEname
+			print "Fxing SGE on compute node"
 			old_fe_name = [ i for i in os.listdir('/etc/init.d/') if i.startswith('sgeexecd') ]
 			if len(old_fe_name) != 1:
 				os.system('ls /etc/init.d/')
 				self.abort('Unable to find old frontend name from sgeexecd script')
 			old_fe_name = old_fe_name[0].split('.')[1].strip()
-	
+
 			sge_reconfigure = '''#!/bin/bash
 . /etc/profile.d/sge-binaries.sh
 
 oldfename=%s
 newfename=%s
-newhostname=%s
 
 chkconfig sgeexecd.$oldfename off
 rm -f /etc/init.d/sgeexecd.$oldfename
@@ -225,7 +225,10 @@ cd $SGE_ROOT && \
         ./inst_sge -noremote -x -auto \
         ./util/install_modules/sge_host_config.conf
 '''
-			os.system(sge_reconfigure % (old_fe_name, fe_fqdn, fqdn))
+			fe_name = fe_fqdn.split('.')[0]
+			print "Previous FE FQDN is ", old_fe_name
+			print "New FE FQDN is ", fe_name
+			os.system(sge_reconfigure % (old_fe_name, fe_name))
 
 
 
