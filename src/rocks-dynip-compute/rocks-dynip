@@ -82,7 +82,9 @@ function reconfigFE() {
 
 	if [ -f $vc_out ] ; then
 		/etc/init.d/network stop
-		/opt/rocks/bin/rocks reconfigure $vc_out compute=true && mv $vc_out $vc_out.old
+		/opt/rocks/bin/rocks reconfigure $vc_out compute=true 
+		# don't move the file we need it for the -post section
+		#&& mv $vc_out $vc_out.old
 	fi
 
 }
