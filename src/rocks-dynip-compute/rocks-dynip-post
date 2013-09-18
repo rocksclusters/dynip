@@ -71,8 +71,9 @@ function reconfigFE() {
 	#
 	# redirect stdout and stderr 
 	#
-	exec > $logfile 2>&1
+	exec >> $logfile 2>&1
 
+	echo "rocks-dynip-post executing"
 	if [ -f $vc_out ] ; then
 		/opt/rocks/bin/rocks reconfigure $vc_out compute=true computepost=true && mv $vc_out $vc_out.old
 	fi
