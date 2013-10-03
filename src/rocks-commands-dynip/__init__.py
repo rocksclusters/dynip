@@ -58,6 +58,7 @@
 import string
 import os.path
 import os
+import sys
 import rocks.commands
 import xml.etree.ElementTree
 import IPy
@@ -228,6 +229,7 @@ cd $SGE_ROOT && \
 			fe_name = fe_fqdn.split('.')[0]
 			print "Previous FE FQDN is ", old_fe_name
 			print "New FE FQDN is ", fe_name
+			sys.stdout.flush()
 			os.system(sge_reconfigure % (old_fe_name, fe_name))
 
 
@@ -333,6 +335,7 @@ cd $SGE_ROOT && \
 		# ca.xml not fixed
 
 		# dns-server.xml
+		sys.stdout.flush()
 		os.system('/opt/rocks/bin/rocks report resolv > resolve.conf')
 		os.system('hostname ' + fqdn)
 		self.command('sync.dns', [])
