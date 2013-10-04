@@ -390,6 +390,7 @@ cd $SGE_ROOT && \
 			# wipe sge installation
 			os.system('/sbin/service sgemaster.%s stop' % old_hostname)
 			os.system('/sbin/chkconfig sgemaster.%s off' % old_hostname)
+			os.system('/usr/bin/pkill -9 sge_qmaster; /usr/bin/pkill -9 sge_execd')
 			os.system('rm /etc/init.d/sgemaster.%s' % old_hostname)
 			os.system('rm -rf /opt/gridengine/default')
 			os.system('sed -i "s/%s/%s/g" /opt/gridengine/util/install_modules/sge_configuration.conf' %
