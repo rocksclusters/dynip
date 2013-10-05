@@ -370,9 +370,9 @@ cd $SGE_ROOT && \
 		os.system('/etc/init.d/httpd restart')
 
 		# nfs-server.xml
-		str = '/export %s(rw,async,no_root_squash) %s/%s(rw,async)' % (private_ip,
+		content = '/export %s(rw,async,no_root_squash) %s/%s(rw,async)' % (private_ip,
 			private_network_addr, private_netmask)
-		self.write_file('/etc/exports', str)
+		self.write_file('/etc/exports', content)
 		os.system(' /usr/sbin/exportfs -a')
 
 		# autofs-server.xml
