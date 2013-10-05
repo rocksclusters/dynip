@@ -369,6 +369,43 @@ cd $SGE_ROOT && \
 		os.system('sed -i "s/ServerName .*/ServerName %s/g" /etc/httpd/conf.d/rocks.conf' % fqdn)
 		os.system('/etc/init.d/httpd restart')
 
+		# nfs-server.xml
+		str = '/export %s(rw,async,no_root_squash) %s/%s(rw,async)' % (private_ip,
+			private_network_addr, private_netmask)
+		self.write_file('/etc/exports', str)
+		os.system(' /usr/sbin/exportfs -a')
+
+		# autofs-server.xml
+		os.system("sed -i 's/%s.local/%s.local/g' /etc/auto.share  /etc/auto.home" %
+			(old_hostname, hostname))
+
+		# 411-server.xml
+		content = """#
+# 411 Specific Apache configuration.
+# Generated automatically by the 411.xml kickstart node.
+#
+
+Listen 372
+NameVirtualHost %s:372
+
+<VirtualHost %s:372>
+Alias /411.d/ "/etc/411.d/"
+Alias /411.d "/etc/411.d"
+
+<Directory /etc/411.d>
+        Options Indexes MultiViews
+        IndexOptions FancyIndexing
+
+        AllowOverride None
+        Order deny,allow
+        Allow from %s/%s
+        Allow from 127.0.0.1
+        Deny from all
+</Directory>
+</VirtualHost> """
+		self.write_file('/etc/httpd/conf.d/411.conf', content % (private_ip,
+			private_ip, private_network_addr, private_netmask))
+
 		#
 		# end base roll ------
 		#
