@@ -11,17 +11,23 @@ Do not use.
 Installation
 ------------
 
-You should install this roll following the standard Rocks installation
-procedure.
+You should install this roll following the procedure below:
 
-To activate the reconfiguration at boot time you need to enable the rocks-dynip
-serice at boot time with:
-
-  chkconfig rocks-dynip on
+```
+git clone https://github.com/rocksclusters/dynip
+cd dynip
+make roll
+rocks add roll dynip-*.iso
+rocks enable roll dynip
+cd /export/rocks/install
+rocks create distro
+rocks set attr rocks_dynip true
+rocks run roll rollname | bash
+```
 
 Finally you will have to create a /root/vc-out.xml file with the appropriate
 format. You can find an example file in /root/vc-out.xml.template or at 
-`pragma_boot <https://github.com/pragmagrid/pragma_boot/blob/master/README.rst#input-and-output-xml-file-example>`_.
+pragma_boot https://github.com/pragmagrid/pragma_boot/blob/master/README.rst#input-and-output-xml-file-example.
 
 
 rocks reconfigure
