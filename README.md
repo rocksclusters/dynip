@@ -36,9 +36,12 @@ rocks reconfigure
 This command can be used to reconfigure a frontend using a configuration
 file with the new network parameters:
 
+```
    rocks reconfigure /root/vc-out.xml
-
-This command is called automatically by the rocks-dynip service at boot time.
+   mv /root/vc-out.xml /root/vc-out.xml.old
+```
+   
+These commands are called automatically by the rocks-dynip service at boot time.
 
 Frontend with DHCP 
 ------------------
