@@ -250,8 +250,14 @@ cd $SGE_ROOT && \
 		fqdn = pubblic_node.attrib["fqdn"]
 		netmask = pubblic_node.attrib["netmask"]
 		gw = pubblic_node.attrib["gw"]
-		dns_node = vc_out_xmlroot.findall('./network/dns')[0]
-		dns_servers = dns_node.attrib["ip"]
+		dns_nodes = vc_out_xmlroot.findall('./network/dns')
+		dns_servers = ""
+		for node_xml in dns_nodes:
+			ip = node_xml.attrib['ip']
+			if len(dns_servers):
+				dns_servers += ",%s" % ip
+			else:
+				dns_servers += "%s" % ip
 		if 'mac' in pubblic_node.attrib:
 			public_mac = pubblic_node.attrib["mac"]
 		else:
