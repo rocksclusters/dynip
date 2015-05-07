@@ -176,13 +176,19 @@ class Command(command):
 				'%s\n%s\n' % (private_ip, gw))
 	
 			# write yum.repo
-			repo_str = '[Rocks-6.1]\nname=Rocks 6.1\n'
+			fname = '/etc/yum.repos.d/rocks-local.repo'
+			content = self.read_file(fname)
+			i = content_find("baseurl=")
+			repo_str = content[:i]
 			repo_str += 'baseurl=http://%s/install/rocks-dist/x86_64\n' % gw
 			repo_str += 'enabled = 1\n'
-			self.write_file('/etc/yum.repos.d/rocks-local.repo', repo_str)
-	
+			self.write_file(fname, repo_str)
+
 			# manually set the hostname in case the 
 			os.system('hostname ' + fqdn)
+			
+			# fix __init__.py file 
+			self.fix_init_file(fe_fqdn)
 
 		else:
 			#
@@ -239,6 +245,27 @@ cd $SGE_ROOT && \
 		f = open(file_name, 'w')
 		f.write(content)
 		f.close()
+
+
+	def read_file(self, file_name):
+		"""read the file_name and return its content"""
+		f = open(fname, 'r')
+		content = f.read()
+		f.close()
+		return content
+
+
+	def fix_init_file(self, fe_fqdn):
+		# get original file contents
+		fname = "/opt/rocks/lib/python2.6/site-packages/rocks/__init__.py"
+		content = self.read_file(fname)
+
+		# write content with new DatabaseHost
+		i = content.find("DatabaseHost")
+		if i == -1:
+			return
+		content_new = content[:i] + "DatabaseHost = \"%s\"\n" % fe_fqdn.split('.')[0]
+		self.write_file(fname, content_new)
 
 
 	def fixFrontend(self, vc_out_xmlroot):
