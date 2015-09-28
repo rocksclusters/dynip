@@ -66,7 +66,9 @@
 logfile=/var/log/dynip.log
 vc_out="/root/vc-out.xml"
 
-. /etc/profile.d/sge-binaries.sh
+if [ -f /etc/profile.d/sge-binaries.sh ]; then
+	. /etc/profile.d/sge-binaries.sh
+fi
 
 function reconfigFE() {
 
