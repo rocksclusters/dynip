@@ -347,7 +347,7 @@ cd $SGE_ROOT && \
 		
 		if hostname != old_hostname :
 			self.command('set.host.name', [old_hostname, hostname])
-		self.command('remove.host.route', [hostname, '0.0.0.0'])
+		self.command('remove.host.route', [hostname, 'address=0.0.0.0'])
 		self.command('add.host.route', [hostname, '0.0.0.0', gw, 'netmask=0.0.0.0'])
 		self.command('remove.route', ['0.0.0.0'])
 		self.command('add.route', ['0.0.0.0', gw, 'netmask=0.0.0.0'])
