@@ -37,6 +37,7 @@ do
     ssh $h yum install rocks-dynip-compute rocks-commands-dynip
     ssh $h chkconfig rocks-dynip on
     ssh $h chkconfig rocks-dynip-post on
+    ssh $h service rocks-grub stop
     ssh $h chkconfig rocks-grub off
 done
 
