@@ -178,7 +178,7 @@ class Command(command):
 			# write yum.repo
 			fname = '/etc/yum.repos.d/rocks-local.repo'
 			content = self.read_file(fname)
-			i = content_find("baseurl=")
+			i = content.find("baseurl=")
 			repo_str = content[:i]
 			repo_str += 'baseurl=http://%s/install/rocks-dist/x86_64\n' % gw
 			repo_str += 'enabled = 1\n'
@@ -247,7 +247,7 @@ cd $SGE_ROOT && \
 		f.close()
 
 
-	def read_file(self, file_name):
+	def read_file(self, fname):
 		"""read the file_name and return its content"""
 		f = open(fname, 'r')
 		content = f.read()
