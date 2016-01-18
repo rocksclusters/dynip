@@ -23,8 +23,5 @@
         <edge from="server">
               <to>dynip</to>
         </edge>
-        <edge from="compute">
-              <to>dynip</to>
-        </edge>
 
 </graph>
