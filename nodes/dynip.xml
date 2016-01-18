@@ -20,7 +20,7 @@
 	<package>rocks-commands-dynip</package>
 	<package cond="appliance == 'compute'">rocks-dynip-compute</package>
 	<package cond="appliance == 'frontend'">rocks-dynip-frontend</package>
-	<package>roll-dynip-usersguide</package>
+	<package cond="appliance == 'frontend'">roll-dynip-usersguide</package>
 
 <post cond="rocks_dynip">
 # remove udev old network rules
@@ -40,7 +40,6 @@ do
     ssh $h service rocks-grub stop
     ssh $h chkconfig rocks-grub off
 done
-
 
 </post>
 
