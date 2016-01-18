@@ -69,7 +69,7 @@ if [ -f /etc/profile.d/sge-binaries.sh ]; then
 fi
 
 
-function reconfigFE() {
+function reconfigNode() {
 
 	#
 	# redirect stdout and stderr 
@@ -98,7 +98,7 @@ case "$1" in
     start)
         #action $"Condor Post Installation" $PRECONFIG 2> /dev/null
         echo "Starting dynip...."
-	reconfigFE
+	reconfigNode
         RETVAL=$?
         ;;
     stop)
