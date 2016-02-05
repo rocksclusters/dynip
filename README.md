@@ -22,7 +22,7 @@ rocks enable roll dynip
 cd /export/rocks/install
 rocks create distro
 rocks set attr rocks_dynip true
-rocks run roll rollname | bash
+rocks run roll dynip | bash
 ```
 
 Finally you will have to create a /root/vc-out.xml file with the appropriate
