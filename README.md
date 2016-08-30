@@ -27,7 +27,7 @@ rocks run roll dynip | bash
 
 Finally you will have to create a /root/vc-out.xml file with the appropriate
 format. You can find an example file in /root/vc-out.xml.template or at 
-pragma_boot https://github.com/pragmagrid/pragma_boot/blob/master/README.rst#input-and-output-xml-file-example.
+pragma_boot https://github.com/pragmagrid/pragma_boot/blob/master/doc/README-old.rst#input-and-output-xml-file-example.
 
 
 rocks reconfigure
