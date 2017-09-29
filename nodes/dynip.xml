@@ -29,7 +29,7 @@ rm -f /etc/sysconfig/network-scripts/ifcfg-eth0
 rm -f /etc/sysconfig/network-scripts/ifcfg-eth1
 chkconfig rocks-dynip on
 
-hostlist=`rocks list host compute  | tail -n +2 | awk -F: '{print $1}'`
+hostlist=`rocks list host | grep Compute | awk -F: '{print $1}'`
 for h in $hostlist;
 do
     ssh $h rm -f /etc/sysconfig/network-scripts/ifcfg-eth0
