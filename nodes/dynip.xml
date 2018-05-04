@@ -27,18 +27,16 @@
 rm -f /etc/udev/rules.d/70-persistent-net.rules
 rm -f /etc/sysconfig/network-scripts/ifcfg-eth0
 rm -f /etc/sysconfig/network-scripts/ifcfg-eth1
-chkconfig rocks-dynip on
+systemctl enable rocks-dynip 
 
 hostlist=`rocks list host | grep Compute | awk -F: '{print $1}'`
 for h in $hostlist;
 do
     ssh $h rm -f /etc/sysconfig/network-scripts/ifcfg-eth0
     ssh $h rm -f /etc/udev/rules.d/70-persistent-net.rules
-    ssh $h yum install rocks-dynip-compute rocks-commands-dynip
-    ssh $h chkconfig rocks-dynip on
-    ssh $h chkconfig rocks-dynip-post on
-    ssh $h service rocks-grub stop
-    ssh $h chkconfig rocks-grub off
+    ssh $h yum -y install rocks-dynip-compute rocks-commands-dynip
+    ssh $h systemctl enable rocks-dynip 
+    ssh $h systemctl enable rocks-dynip-post 
 done
 
 </post>

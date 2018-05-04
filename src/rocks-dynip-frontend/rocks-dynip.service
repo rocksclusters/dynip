@@ -1,0 +1,17 @@
+[Unit]
+Description=Rocks Dynip
+Before=NetworkManager.service
+
+[Service]
+Type=oneshot
+Environment="vc_out=/root/vc-out.xml"
+ExecStartPre=/bin/bash -c "touch /tmp/dynip.exec"
+ExecStart=/opt/rocks/bin/rocks reconfigure $vc_out 
+ExecStartPost=/bin/bash -c "mv $vc_out $vc_out.old"
+Restart=no
+StandardOutput=syslog
+StandardError=syslog
+
+[Install]
+WantedBy=multi-user.target
+

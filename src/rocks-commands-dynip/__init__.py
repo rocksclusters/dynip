@@ -371,7 +371,7 @@ cd $SGE_ROOT && \
 
 		# ------  web-server roll  ------
 		os.system('sed -i "s/ServerName .*/ServerName %s/g" /etc/httpd/conf.d/rocks.conf' % new_config["fqdn"])
-		os.system('/etc/init.d/httpd restart')
+		os.system('/usr/bin/systemctl restart httpd')
 
 		self.fixGanglia(new_config["name"])
 
@@ -395,8 +395,8 @@ cd $SGE_ROOT && \
 			'sed -i "s/data_source .*/data_source %s localhost:8649/g" /etc/ganglia/gmetad.conf' % hostname)
 		os.system(
 			'/opt/rocks/bin/rocks report host ganglia gmond localhost > /etc/ganglia/gmond.conf')
-		os.system('/sbin/service gmond restart')
-		os.system('/sbin/service gmetad restart')
+		os.system('/usr/bin/systemctl restart gmond')
+		os.system('/usr/bin/systemctl restart gmetad')
 
 	def fixMail(self, old_domainname, new_domainname, fqdn):
 		# mail-server.xml
@@ -409,7 +409,7 @@ cd $SGE_ROOT && \
 		f.close()
 		os.system('/usr/sbin/postmap /etc/postfix/sender-canonical')
 		os.system('/usr/sbin/postmap /etc/postfix/recipient-canonical')
-		os.system('/etc/init.d/postfix restart')
+		os.system('/usr/bin/systemctl restart postfix')
 
 	def fixNetwork(self, new_config, old_config):
 		if new_config["name"] != old_config["name"]:
@@ -456,7 +456,6 @@ cd $SGE_ROOT && \
 	/opt/rocks/bin/rocks report host network localhost | /opt/rocks/bin/rocks report script | /bin/bash;
 	/opt/rocks/bin/rocks report host route localhost | /opt/rocks/bin/rocks report script | /bin/bash;
 	/opt/rocks/bin/rocks report host > /etc/hosts;''' % attrs)
-		os.system('/etc/init.d/network start')
 
 	def fixNfs(self, private_ip, private_network_addr, private_netmask):
 		# nfs-server.xml

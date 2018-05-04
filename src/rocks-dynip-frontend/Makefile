@@ -66,8 +66,8 @@ build:
 	echo build
 	
 install::
-	mkdir -p $(ROOT)/etc/rc.d/init.d/
-	install rocks-dynip $(ROOT)/etc/rc.d/init.d/
+	mkdir -p $(ROOT)/etc/systemd/system
+	install rocks-dynip.service $(ROOT)/etc/systemd/system
 	mkdir -p $(ROOT)/root
 	install vc-out.xml.template $(ROOT)/root
 
