@@ -67,9 +67,9 @@ build:
 	
 install::
 	mkdir -p $(ROOT)/etc/systemd/system
-	install rocks-dynip.service $(ROOT)/etc/systemd/system
+	install -m 644 rocks-dynip.service $(ROOT)/etc/systemd/system
 	mkdir -p $(ROOT)/root
-	install vc-out.xml.template $(ROOT)/root
+	install -m 644 vc-out.xml.template $(ROOT)/root
 
 clean::
 	rm -rf $(NAME)-$(VERSION)
