@@ -100,7 +100,7 @@ class Command(command):
 	"""
 
 	def run(self, params, args):
-
+		print "Running dynip"
 		(compute, computepost) = self.fillParams([
 			('compute', 'n'),
 			('computepost', 'n'),
@@ -305,7 +305,7 @@ cd $SGE_ROOT && \
 
 	def fix_init_file(self, fe_fqdn):
 		# get original file contents
-		fname = "/opt/rocks/lib/python2.6/site-packages/rocks/__init__.py"
+		fname = "/opt/rocks/lib/python2.7/site-packages/rocks/__init__.py"
 		content = self.read_file(fname)
 
 		# write content with new DatabaseHost
@@ -355,11 +355,13 @@ cd $SGE_ROOT && \
 			old_config["ifaces"]["public"]["ip"], new_config["ifaces"]["public"]["ip"]))
 
 		# mail-server.xml
+		print "Updating mail"
 		self.fixMail(old_config["ifaces"]["public"]["domainname"], pub_iface["domainname"], new_config["fqdn"])
-
+		print "Updating NFS"
 		self.fixNfs(pub_iface["ip"], pub_iface["subnet"], pub_iface["netmask"])
 
 		# autofs-server.xml
+		print "Updating autofs"
 		os.system("sed -i 's/%s.local/%s.local/g' /etc/auto.share  /etc/auto.home" %
 			(old_config["name"], new_config["name"]))
 
@@ -370,9 +372,11 @@ cd $SGE_ROOT && \
 		#
 
 		# ------  web-server roll  ------
+		print "Updating httpd"
 		os.system('sed -i "s/ServerName .*/ServerName %s/g" /etc/httpd/conf.d/rocks.conf' % new_config["fqdn"])
 		os.system('/usr/bin/systemctl restart httpd')
 
+		print "Updating ganglia"
 		self.fixGanglia(new_config["name"])
 
 		# ------  sge roll  ------
@@ -383,11 +387,13 @@ cd $SGE_ROOT && \
 		# adding compute node to the DB
 		#
 
+		print "Updating compute nodes"
 		xml_nodes = vc_out_xmlroot.findall('./compute/node')
 		if xml_nodes:
 			self.fixComputes(xml_nodes)
 
 		# sync config
+		print "Syncing config"
 		self.command('sync.config', [])
 
 	def fixGanglia(self, hostname):
@@ -456,6 +462,12 @@ cd $SGE_ROOT && \
 	/opt/rocks/bin/rocks report host network localhost | /opt/rocks/bin/rocks report script | /bin/bash;
 	/opt/rocks/bin/rocks report host route localhost | /opt/rocks/bin/rocks report script | /bin/bash;
 	/opt/rocks/bin/rocks report host > /etc/hosts;''' % attrs)
+		network_status = os.system('systemctl is-active network')
+		if network_status == 0:
+			print "Restarting network"
+			os.system('systemctl restart network')
+		else:
+			print "Network not yet started; assuming it gets started later"
 
 	def fixNfs(self, private_ip, private_network_addr, private_netmask):
 		# nfs-server.xml
@@ -572,7 +584,8 @@ cd $SGE_ROOT && \
 			if matcher:
 				(name, subnet, netmask) = matcher.groups()
 				old_config["ifaces"][name] = {'subnet': subnet, 'netmask': netmask}
-		old_config["ifaces"]["public"]["domainname"] = old_config["fqdn"][old_config["fqdn"].find('.') + 1:]
+		old_config["ifaces"]["public"]["domainname"] = self.db.getHostAttr('localhost', 'Kickstart_PublicDNSDomain')
+		print old_config["ifaces"]["public"]["domainname"]
 		old_config["ifaces"]["public"]["ip"] = self.db.getHostAttr('localhost', 'Kickstart_PublicAddress')
 		old_config["ifaces"]["public"]["iface"] = self.db.getHostAttr('localhost',
 		                                       'Kickstart_PublicInterface')
