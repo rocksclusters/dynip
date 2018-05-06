@@ -1,11 +1,8 @@
 [Unit]
 Description=Rocks Dynip Post
 Requires=rocks-dynip.service
-Requires=foundation-mysql.service
-After=foundation-mysql.service
 After=rocks-dynip.service
 After=NetworkManager.service
-Wants=foundation-mysql.service
 Wants=rocks-dynip.service
 
 [Service]
@@ -16,7 +13,7 @@ ExecStartPost=/bin/bash -c "mv $vc_out $vc_out.old"
 Restart=no
 StandardOutput=syslog
 StandardError=syslog
-SyslogIdentifier=dynip
+SyslogIdentifier=dynip_post
 
 [Install]
 RequiredBy=multi-user.target

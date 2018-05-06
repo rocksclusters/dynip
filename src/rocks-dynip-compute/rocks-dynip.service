@@ -1,14 +1,13 @@
 [Unit]
 Description=Rocks Dynip
-Requires=foundation-mysql.service
-After=foundation-mysql.service
-Wants=foundation-mysql.service
+Requires=NetworkManager.service
+After=NetworkManager.service
 
 
 [Service]
 Type=oneshot
 Environment="vc_out=/root/vc-out.xml"
-ExecStart=/opt/rocks/bin/rocks reconfigure $vc_out 
+ExecStart=/opt/rocks/bin/rocks reconfigure $vc_out compute=true
 Restart=no
 StandardOutput=syslog
 StandardError=syslog

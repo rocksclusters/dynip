@@ -165,7 +165,7 @@ class Command(command):
 	def fixCompute(self, vc_out_xmlroot, computepost):
 		"""fix a compute node network based on the vc-out.xml"""
 
-		xml_node = vc_out_xmlroot.findall('./compute/')[0]
+		xml_node = vc_out_xmlroot.findall('./compute')[0]
 		name = xml_node.attrib["name"]
 		gw = xml_node.attrib["gw"]
 		fe_fqdn = vc_out_xmlroot.findall('./frontend')[0].attrib["fqdn"]
@@ -224,7 +224,7 @@ class Command(command):
 			# fix __init__.py file
 			self.fix_init_file(fe_fqdn)
 
-		else:
+		elif os.path.exists("/etc/profile.d/sge-binaries.sh"):
 			#
 			# SGE now running as a last init script
 			# I need the network up and running to configure SGE
