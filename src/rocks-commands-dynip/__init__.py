@@ -380,7 +380,8 @@ cd $SGE_ROOT && \
 		self.fixGanglia(new_config["name"])
 
 		# ------  sge roll  ------
-		if old_config["name"] != new_config["name"]:
+		sge_status = os.system('rocks list roll | grep sge | grep yes')
+		if old_config["name"] != new_config["name"] and sge_status == 0:
 			self.fixSge(old_config["name"], new_config["name"], new_config["fqdn"])
 
 		#
@@ -606,5 +607,7 @@ cd $SGE_ROOT && \
 		f.write(content)
 		f.close()
 
+
+RollName = "dynip"
 
 RollName = "dynip"
