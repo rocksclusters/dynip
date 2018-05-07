@@ -380,7 +380,7 @@ cd $SGE_ROOT && \
 		self.fixGanglia(new_config["name"])
 
 		# ------  sge roll  ------
-		sge_status = os.system('rocks list roll | grep sge | grep yes')
+		sge_status = os.system('/opt/rocks/bin/rocks list roll | grep sge | grep yes')
 		if old_config["name"] != new_config["name"] and sge_status == 0:
 			self.fixSge(old_config["name"], new_config["name"], new_config["fqdn"])
 
@@ -453,6 +453,7 @@ cd $SGE_ROOT && \
 	
 		sys.stdout.flush()
 		os.system('/opt/rocks/bin/rocks report resolv > resolve.conf')
+		print "Setting hostname to %s" % new_config["fqdn"]
 		os.system('hostname ' + new_config["fqdn"])
 		self.command('sync.dns', [])
 		# needs to do this since rocks sync host network will not work without network :-(
@@ -606,8 +607,3 @@ cd $SGE_ROOT && \
 		f = open(file_name, 'w')
 		f.write(content)
 		f.close()
-
-
-RollName = "dynip"
-
-RollName = "dynip"
